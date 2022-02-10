@@ -1,0 +1,96 @@
+﻿@page "/salescartstore"
+
+@using LayerModels;
+@using MudBlazor;
+
+@inject IJSRuntime JsRuntime;
+
+<MudTable Items="@lstProductList" Hover="true" Bordered="true" Filter="new Func<ProductsStore, bool>(FilterCycleCheck)">
+    <ToolBarContent>
+        <MudText Typo="Typo.h3">Listado de productos</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="@searchterm" Placeholder="Buscar Fruta" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Small"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Codigo Producto</MudTh>
+        <MudTh>Nombre Producto</MudTh>
+        <MudTh>Descripción Producto</MudTh>
+        <MudTh>Imagen Producto</MudTh>
+        <MudTh>Cantidad a Comprar</MudTh>
+        <MudTh>Valor del Producto</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="CodeProduct">@context.CodeProduct</MudTd>
+        <MudTd DataLabel="NameProduct">@context.NameProduct</MudTd>
+        <MudTd DataLabel="DescriptionProduct">@context.DescriptionProduct</MudTd>
+        <MudTd DataLabel="PathImageProduct"><img src="@context.PathImageProduct" width="100" height="100" alt="Frutas" /></MudTd>
+        <MudTd DataLabel="AmountProduct">
+            <MudNumericField @bind-Value="@context.AmountProduct" Variant="Variant.Text" Min="0" Max="1000" />
+        </MudTd>
+        <MudTd DataLabel="PriceProduct">
+            <MudNumericField @bind-Value="@context.PriceProduct" AdornmentIcon="@Icons.Material.Filled.PriceCheck" Variant="Variant.Filled" Min="0" ReadOnly="true" />
+        </MudTd>
+    </RowTemplate>
+    <FooterContent>
+        <MudTd Style="text-align:right"><MudButton Style="background-color: blue; color: white; width: 300px; height: 60px; border-radius: 20px" OnClick="(() => SalesFruits())">Comprar</MudButton></MudTd>
+    </FooterContent>
+</MudTable>
+
+
+@code
+{
+    string searchterm = "";
+    List<ProductsStore> lstProductList = new List<ProductsStore>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        HttpClient httpcli = new HttpClient();
+        HttpResponseMessage response = httpcli.GetAsync("https://localhost:44357/api/ProductsSalesCart/GetListProductsAll").Result;
+        var tmpResonse = response.Content.ReadAsStringAsync().Result;
+        lstProductList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ProductsStore>>(tmpResonse);
+    }
+
+    private bool FilterCycleCheck(ProductsStore item)
+    {
+        if (item.NameProduct.Contains(searchterm))
+        {
+            return true;
+        }
+        if (item.DescriptionProduct.Contains(searchterm))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void SalesFruits()
+    {
+        for (int fruta = 0; fruta < lstProductList.Count; fruta++)
+        {
+            //Si la cantidad a comprar, es mayor a Cero(0) es porque las esta adicionando al carrito.
+            if (lstProductList[fruta].AmountProduct > 0)
+            {
+                llamadoservicio(lstProductList[fruta].CodeProduct, lstProductList[fruta].AmountProduct);
+                lstProductList[fruta].AmountProduct = 0;
+            }
+        }
+        ShowAlert("Su compra fue Exitosa !!!");
+    }
+
+    private void llamadoservicio(string strCodeProduct, int intAmountProduct)
+    {
+        using (HttpClient httpcli = new HttpClient())
+        {
+
+            //Si la cantidad a comprar, es mayor a Cero(0) es porque las esta adicionando al carrito.
+            HttpResponseMessage response = httpcli.GetAsync(string.Format("https://localhost:44357/api/ProductsSalesCart/PutSaleProduct/{0}/{1}", strCodeProduct, intAmountProduct)).Result;
+            var tmpResonse = response.Content.ReadAsStringAsync().Result;
+
+        }
+    }
+
+    private async Task ShowAlert(string mensajex)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", mensajex); // Confirm
+    }
+}

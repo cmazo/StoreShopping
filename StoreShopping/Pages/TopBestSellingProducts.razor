@@ -1,0 +1,38 @@
+﻿@page "/TopBestSellingProducts"
+
+@using MudBlazor;
+@using LayerModels; 
+
+<MudTable Items="@lstProductList" Hover="true" Bordered="true" >
+    <ToolBarContent>
+        <MudText Style="color: blue;" Typo="Typo.h3">Listado de productos MAS vendidos !!!</MudText>
+        <MudSpacer />
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Codigo Producto</MudTh>
+        <MudTh>Nombre Producto</MudTh>
+        <MudTh>Cantidad a Comprar</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="CodeProduct">@context.CodeProduct</MudTd>
+        <MudTd DataLabel="NameProduct">@context.NameProduct</MudTd>
+        <MudTd DataLabel="AmountProduct">
+            <MudNumericField @bind-Value="@context.AmountProduct" Variant="Variant.Text" ReadOnly="true"/>
+        </MudTd>
+    </RowTemplate>
+    <FooterContent>
+    </FooterContent>
+</MudTable>
+
+@code
+{
+    List<ProductsStore> lstProductList = new List<ProductsStore>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        HttpClient httpcli = new HttpClient();
+        HttpResponseMessage response = httpcli.GetAsync("https://localhost:44357/api/ProductsSalesCart/GetTopBestSellingProducts").Result;
+        var tmpResonse = response.Content.ReadAsStringAsync().Result;
+        lstProductList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ProductsStore>>(tmpResonse);
+    }
+}

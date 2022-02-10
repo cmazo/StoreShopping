@@ -1,0 +1,103 @@
+﻿@page "/pagemenustoreshopping/{paramUser}"
+
+@using MudBlazor;
+@using LayerModels;
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime;
+
+<html>
+<head>
+    <title>PAGINA DE MENU</title>
+</head>
+<body>
+    <table border="1" width="70%" align="center">
+        <tr>
+            <td align="center"><MudText Typo="Typo.h3">MENU PAGINA TIENDA Y SUS COMPRAS - @paramUser </MudText></td>
+        </tr>
+        <tr>
+            <td align="center">
+                <MudLink Style="font-size:40px;font-weight:bold" href="administratorModule" Disabled="@booAdministratorModule">
+                    Módulo Administrador
+                </MudLink>
+            </td>
+        </tr>
+        <tr>
+            <td align="center">
+                <MudLink Style="font-size:40px;font-weight:bold" href="salescartstore" Disabled="@booSalesCart">
+                    Carrito Ventas
+                </MudLink>
+            </td>
+        </tr>
+        <tr>
+            <td align="center">
+                <MudLink Style="font-size:40px;font-weight:bold" href="TopBestSellingProducts" Disabled="@booTopBestSellingProducts">
+                    Top de los productos mas vendidos
+                </MudLink>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+@code
+{
+    [Parameter]
+    public string paramUser { get; set; }
+    UserStore userLogged = new UserStore();
+    string strUrlInitial;
+    bool booAdministratorModule = false;
+    bool booSalesCart = false;
+    bool booTopBestSellingProducts = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        try
+        {
+            //Valida si se ha logueado en alguna ocacion.
+            HttpClient httpcli = new HttpClient();
+            HttpResponseMessage response = httpcli.GetAsync(string.Format("https://localhost:44357/api/SecurityAccess/FillUser/{0}", paramUser)).Result;
+            var tmpResonse = response.Content.ReadAsStringAsync().Result;
+            userLogged = Newtonsoft.Json.JsonConvert.DeserializeObject<UserStore>(tmpResonse);
+
+            if (userLogged.Logged)
+            {
+                strUrlInitial = $"pagemenustoreshopping/{paramUser}";
+
+                //ToDo  - M@zzO,  se debe habilitar este codigo. OJO
+                if (userLogged.TypeUsStore == enTypeUser.Administrator)
+                {
+                    //Manejo de menu para administrador
+                    booSalesCart = true;
+                }
+                else
+                {
+                    //Manejo menu para Comprador
+                    booAdministratorModule = true;
+                    booTopBestSellingProducts = true;
+                }
+            }
+            else
+            {
+                NavigationManager.NavigateTo("Index");//response.redirect funciona igual.
+            }
+        }
+        catch (Exception er)
+        {
+            LayerLogs.FileLogger.Log(er.Message);
+            ShowAlert(er.Message);
+        }
+
+    }
+
+    /// <summary>
+    /// Visualiza mensaje en el browser.
+    /// </summary>
+    /// <param name="mensajex"></param>
+    /// <returns></returns>
+    public async Task ShowAlert(string mensajex)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", mensajex); // Confirm
+    }
+
+}

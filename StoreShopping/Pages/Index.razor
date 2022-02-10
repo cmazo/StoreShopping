@@ -1,0 +1,81 @@
+﻿@page "/"
+@page "/Index"
+
+@using MudBlazor
+@using LayerModels;
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime;
+
+
+<html>
+<head>
+    <title>Tienda y Sus Compras</title>
+</head>
+<body>
+    <table align="center" width="60%" border="1">
+        <tr>
+            <td height="100px" align="center" colspan="2"><MudText Style="font-size:40px;color:blue;font-weight:bold">Tienda y sus Compras</MudText></td>
+        </tr>
+        <tr>
+            <td height="60px" align="center" colspan="2"><MudText Style="color:blue; font:20px;">Pagina de Logueo - Bienvenido !!!</MudText></td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Usuario:</MudText></td>
+            <td height="40px" align="center"><input id="todo" placeholder="Digite Usuario" @bind="strUsuario" /></td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Password:</MudText></td>
+            <td height="40px" align="center"><input id="pwd" type="password" placeholder="Digite Password" @bind="strPassword" /></td>
+        </tr>
+        <tr>
+            <td height="70px" align="center" colspan="2"><MudButton Style="background-color: blue; color: white; width: 300px; height: 60px; border-radius: 20px" OnClick="(() => ValidarPassword())">Loggueo</MudButton></td>
+        </tr>
+    </table>
+</body>
+</html>
+
+@code
+{
+    private string strUsuario;
+    private string strPassword;
+
+    /// <summary>
+    /// Valida que el usuario y contraseña sean validos, para avanzar a la pagina menu.
+    /// </summary>
+    private void ValidarPassword()
+    {
+        try
+        {
+            //Validacion de usuario logueo.
+            HttpClient httpcli = new HttpClient();
+            HttpResponseMessage response = httpcli.GetAsync(string.Format("https://localhost:44357/api/SecurityAccess/GetValidateUserLoging/{0}/{1}", strUsuario, strPassword)).Result;
+            var resultado = response.Content.ReadAsStringAsync().Result;
+
+            if (Convert.ToBoolean(resultado))
+            {
+                NavigationManager.NavigateTo("pagemenustoreshopping/" + strUsuario);//response.redirect funciona igual.
+            }
+            else
+            {
+                ShowAlert("Usuario o contraseña erronea !!");
+            }
+        }
+        catch (Exception er)
+        {
+            ShowAlert(er.Message);
+            LayerLogs.FileLogger.Log(er.Message);
+        }
+    }
+
+
+    /// <summary>
+    /// Visualiza mensaje en el browser.
+    /// </summary>
+    /// <param name="mensajex"></param>
+    /// <returns></returns>
+    public async Task ShowAlert(string mensajex)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", mensajex); // Confirm
+    }
+}

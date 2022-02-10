@@ -1,0 +1,198 @@
+﻿@page "/administratorModule"
+
+@using MudBlazor;
+@using LayerModels;
+@using Microsoft.AspNetCore.Components.Forms
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@inject IWebHostEnvironment env;
+@inject IJSRuntime JsRuntime;
+
+<html>
+<head>
+</head>
+<body>
+    <table border="1" align="center">
+        <tr>
+            <td colspan="2">
+                <MudText Style="font-size:50px;color:blue;font-weight:bold">Registrar Productos Nuevos !!!</MudText>
+            </td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Código Producto:</MudText></td>
+            <td height="40px" align="center"><MudTextField T="string" @ref="strCodProduct" Required="true" RequiredError="*" AdornmentColor="Color.Warning" /></td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Nombre Producto:</MudText></td>
+            <td height="40px" align="center"><MudTextField T="string" @ref="strNameProduct" Required="true" RequiredError="*" AdornmentColor="Color.Warning" /></td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Descripción Producto:</MudText></td>
+            <td height="40px" align="center"><MudTextField T="string" @ref="strDesProduct" Required="true" RequiredError="*" AdornmentColor="Color.Warning" /></td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Precio Producto:</MudText></td>
+            @*<td height="40px" align="center"><MudTextField T="string" @ref="strPreProduct" Required="true" RequiredError="*" AdornmentColor="Color.Warning"/></td>*@
+            <td height="40px" align="center"> <MudTextField @bind-Value="strPreProduct" Style="align-items: center; justify-content: right" Variant="Variant.Text" Adornment="Adornment.Start" Required="true" RequiredError="*" /></td>
+        </tr>
+        <tr>
+            <td height="40px" align="center"><MudText Style="color:blue">Imagen Producto:</MudText></td>
+            <td height="40px" align="center">
+                <InputFile OnChange="e => LoadFiles(e)"></InputFile>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" align="center">
+                <MudButton Style="background-color: blue; color: white; width: 300px; height: 60px; border-radius:20px" OnClick="(() => SaveProduct())">Grabar Producto</MudButton>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
+@code {
+
+    // using Microsoft.AspNetCore.Hosting Esta relacionada con el IWebHostEnvironment para obtener la imagen y luego pasarla a la ruta de imagenes
+    private int strPreProduct { get; set; }
+
+    MudTextField<string> strCodProduct;
+    MudTextField<string> strNameProduct;
+    MudTextField<string> strDesProduct;
+    MudTextField<string> strImagexProduct;
+
+    //Se instancia para tener el objeto y copiar el archivo una vez le den al boton Grabar y no antes.
+    private IReadOnlyList<IBrowserFile> filex;
+
+    private ProductsStore ProductNew = new ProductsStore();
+
+    /// <summary>
+    /// Carga el archivo en la ruta Images de nuestro proyecto.
+    /// </summary>
+    /// <param name="e"></param>
+    /// <returns></returns>
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+        filex = e.GetMultipleFiles(1);
+
+        foreach (var file in filex)
+        {
+            Stream stream = file.OpenReadStream();
+            var path = $"{env.WebRootPath}\\image\\{file.Name}";
+
+            ProductNew.PathImageProduct = file.Name;
+
+            FileStream fs = File.Create(path);
+            await stream.CopyToAsync(fs);
+            stream.Close();
+            fs.Close();
+        }
+    }
+
+    /// <summary>
+    /// Graba/Inserta los productos en la base de datos.
+    /// </summary>
+    private void SaveProduct()
+    {
+        ProductNew.CodeProduct = strCodProduct.Text;
+        ProductNew.NameProduct = strNameProduct.Text;
+        ProductNew.DescriptionProduct = strDesProduct.Text;
+        //ProductNew.PathImageProduct = strImagexProduct;
+        if (!string.IsNullOrEmpty(strPreProduct.ToString()))
+            ProductNew.PriceProduct = strPreProduct;
+
+        if (ValidProduct())
+        {
+            SaveImage();
+        }
+    }
+
+    /// <summary>
+    /// Valida la informacion de los productos antes de grabarlos.
+    /// </summary>
+    /// <returns></returns>
+    private bool ValidProduct()
+    {
+        bool isValid = true;
+
+        if (string.IsNullOrEmpty(ProductNew.CodeProduct))
+        {
+            strCodProduct.Validate();
+            isValid = false;
+        }
+
+        if (string.IsNullOrEmpty(ProductNew.NameProduct))
+        {
+            strNameProduct.Validate();
+            isValid = false;
+        }
+
+        if (string.IsNullOrEmpty(ProductNew.DescriptionProduct))
+        {
+            strDesProduct.Validate();
+            isValid = false;
+        }
+
+        if (string.IsNullOrEmpty(ProductNew.PriceProduct.ToString()) || ProductNew.PriceProduct == 0)
+        {
+            strCodProduct.Validate();
+            isValid = false;
+        }
+
+        if (!isValid)
+        {
+            ShowAlert("Faltan campos por Llenar !!");
+        }
+
+        return isValid;
+    }
+
+    /// <summary>
+    /// Realiza el llamado del servicio API para insertarlos
+    /// </summary>
+    /// <returns></returns>
+    private async Task SaveImage()
+    {
+        try
+        {
+            HttpClient httpcli = new HttpClient();
+
+            HttpResponseMessage response = httpcli.GetAsync(string.Format("https://localhost:44357/api/ProductsSalesCart/PostInsertProduct/{0}/{1}/{2}/{3}/{4}",
+            ProductNew.CodeProduct, ProductNew.NameProduct, ProductNew.DescriptionProduct, ProductNew.PriceProduct, ProductNew.PathImageProduct)).Result;
+
+            var tmpResonse = response.Content.ReadAsStringAsync().Result;
+
+            if (tmpResonse == "true")
+            {
+                ShowAlert("Se grabo con exito");
+                ClearText();
+            }
+        }
+        catch (Exception er)
+        {
+            LayerLogs.FileLogger.Log(er.Message);
+            ShowAlert(er.Message);
+        }
+    }
+
+    /// <summary>
+    /// Visualiza los mensaje en el browser.
+    /// </summary>
+    /// <param name="mensajex"></param>
+    /// <returns></returns>
+    public async Task ShowAlert(string mensajex)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", mensajex);
+    }
+
+    /// <summary>
+    /// Limpia los valores del formulario
+    /// </summary>
+    private void ClearText()
+    {
+        strCodProduct.Text = string.Empty;
+        strNameProduct.Text = string.Empty;
+        strDesProduct.Text = string.Empty;
+        strPreProduct = 0;
+    }
+
+}
