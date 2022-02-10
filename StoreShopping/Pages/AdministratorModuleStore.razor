@@ -28,12 +28,11 @@
         </tr>
         <tr>
             <td height="40px" align="center"><MudText Style="color:blue">Descripción Producto:</MudText></td>
-            <td height="40px" align="center"><MudTextField T="string" @ref="strDesProduct" Required="true" RequiredError="*" AdornmentColor="Color.Warning" /></td>
+            <td height="40px" align="center"><MudTextField T="string" @ref="strDesProduct" Required="true"  Lines="3" Variant="Variant.Outlined" RequiredError="*" AdornmentColor="Color.Warning" /></td>
         </tr>
         <tr>
             <td height="40px" align="center"><MudText Style="color:blue">Precio Producto:</MudText></td>
-            @*<td height="40px" align="center"><MudTextField T="string" @ref="strPreProduct" Required="true" RequiredError="*" AdornmentColor="Color.Warning"/></td>*@
-            <td height="40px" align="center"> <MudTextField @bind-Value="strPreProduct" Style="align-items: center; justify-content: right" Variant="Variant.Text" Adornment="Adornment.Start" Required="true" RequiredError="*" /></td>
+            <td height="40px" align="center"> <MudTextField @bind-Value="strPreProduct" Style="align-items: center; justify-content: right;"  Variant="Variant.Text" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.AttachMoney" Required="true" RequiredError="*" /></td>
         </tr>
         <tr>
             <td height="40px" align="center"><MudText Style="color:blue">Imagen Producto:</MudText></td>

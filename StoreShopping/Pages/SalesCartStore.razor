@@ -28,7 +28,7 @@
             <MudNumericField @bind-Value="@context.AmountProduct" Variant="Variant.Text" Min="0" Max="1000" />
         </MudTd>
         <MudTd DataLabel="PriceProduct">
-            <MudNumericField @bind-Value="@context.PriceProduct" AdornmentIcon="@Icons.Material.Filled.PriceCheck" Variant="Variant.Filled" Min="0" ReadOnly="true" />
+            <MudNumericField @bind-Value="@context.PriceProduct"  Variant="Variant.Filled" AdornmentIcon="@Icons.Material.Filled.AttachMoney" AdornmentText="$" Min="0" ReadOnly="true" />
         </MudTd>
     </RowTemplate>
     <FooterContent>
